@@ -1,0 +1,59 @@
+export DEB_PACK=modulis-zonkey
+export VERSION=62.1
+export DEB_VERSION=1
+export DEB_PATH=/home/modulis/package/zonkey/${DEB_PACK}_$VERSION-$DEB_VERSION
+
+mkdir -p $DEB_PATH/DEBIAN && cd $DEB_PATH
+prod=`git ls-remote git@github.com:modulis/zonkey.git | grep heads/v  | sort | tail -1 | grep -P 'v\d+' -o`
+git clone --depth 2 git@github.com:modulis/zonkey.git -b $prod $DEB_PATH/var/www/zonkey
+
+mkdir -p $DEB_PATH/etc/zonkey/config
+cp -R $DEB_PATH/var/www/zonkey/p_templates/ $DEB_PATH/etc/zonkey/ 
+cp $DEB_PATH/var/www/zonkey/config/custom_conf.yml $DEB_PATH/etc/zonkey/config/custom_conf.yml
+cp $DEB_PATH/var/www/zonkey/config/provisioning.yml $DEB_PATH/etc/zonkey/config/
+cp $DEB_PATH/var/www/zonkey/config/opensips.yml $DEB_PATH/etc/zonkey/config/
+cp $DEB_PATH/var/www/zonkey/config/asterisk-ajam.yml $DEB_PATH/etc/zonkey/config/
+cp $DEB_PATH/var/www/zonkey/config/sms.yml $DEB_PATH/etc/zonkey/config/sms.yml
+
+cat << EOF > DEBIAN/changelog
+${DEB_PACK} ($VERSION) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Kevin Gagne <kevin.gagne@modulis.ca>  `date`
+EOF
+
+cat << EOF > DEBIAN/control
+Package: ${DEB_PACK}
+Version: $VERSION-$DEB_VERSION
+Architecture: amd64
+Maintainer: Kevin Gagne <kevin.gagne@gmaail.com>
+Section: comm
+Priority: optional
+Homepage: http://www.modulis.ca/
+Description: Web interface for Zonkey installation
+ Zonkey is a cluster of VoIP software providing good scalability and redundancy
+EOF
+
+cat << EOF > DEBIAN/postinst
+#!/bin/bash
+
+echo "export RAILS_ENV=production" >> /root/.bashrc
+. /root/.bashrc
+chown -R www-data. /etc/zonkey
+chown -R www-data. /var/www/zonkey
+
+EOF
+
+cat << EOF > DEBIAN/postrm
+#!/bin/bash
+
+sed -i 's/export RAILS_ENV=production//g' /root/.bashrc
+rm -rf /etc/zonkey/config
+rm -rf /var/www/zonkey
+
+EOF
+
+chmod 755 DEBIAN/postinst && chmod 755 DEBIAN/postrm
+cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION-$DEB_VERSION
+

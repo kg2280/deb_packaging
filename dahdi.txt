@@ -1,0 +1,77 @@
+export DEB_PACK=modulis-dahdi
+export VERSION=2.11
+export DEB_VERSION=1
+export DEB_PATH=/home/modulis/package/dahdi/${DEB_PACK}_$VERSION-$DEB_VERSION
+export DEB_FILE=dahdi-linux-complete-current.tar.gz
+
+mkdir -p $DEB_PATH && cd $DEB_PATH/..
+wget http://downloads.asterisk.org/pub/telephony/dahdi-linux-complete/$DEB_FILE
+tar xvzf $DEB_FILE
+rm -f $DEB_FILE
+cd dahdi-linux-complete*
+make && make install DESTDIR=$DEB_PATH
+make config DESTDIR=$DEB_PATH
+mkdir -p $DEB_PATH/etc/init.d/
+cp tools/dahdi.init $DEB_PATH/etc/init.d/dahdi
+
+cd $DEB_PATH
+mkdir $DEB_PATH/DEBIAN
+
+cat << EOF > DEBIAN/changelog
+${DEB_PACK} ($VERSION) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Kevin Gagne <kevin.gagne@modulis.ca>  `date`
+EOF
+
+cat << EOF > DEBIAN/control
+Package: ${DEB_PACK}
+Source: ${DEB_PACK}
+Priority: optional
+Section: comm
+Maintainer:Kevin Gagne <kevin.gagne@modulis.ca>
+Architecture: amd64
+Version: $VERSION
+Build-Depends: debhelper (>= 9)
+Replaces: zaptel
+Depends: libc6 (>= 2.14), libnewt0.52, libusb-0.1-4 (>= 2:0.1.12), perl, procps, fxload, gawk
+Conflicts: zaptel
+Description: Complete DAHDI
+ DAHDI (formly Zaptel) is an interface for telephony devices used by e.g.
+ the Asterisk PBX software. The modulis-dahdi packages provide the kernel
+ DAHDI kernel modules and their required setup environment.
+Homepage: http://www.asterisk.org/
+EOF
+
+cat << EOF > DEBIAN/postinst
+#!/bin/sh
+set -e
+depmod -a
+ldconfig
+if [ -x "/etc/init.d/dahdi" ]; then
+	update-rc.d dahdi defaults >/dev/null
+	invoke-rc.d dahdi start || exit $?
+fi
+EOF
+
+cat << EOF > DEBIAN/postrm
+#!/bin/sh
+set -e
+if [ "$1" = "purge" ] ; then
+	update-rc.d dahdi remove >/dev/null
+fi
+EOF
+
+cat << EOF > DEBIAN/prerm
+#!/bin/sh
+set -e
+if [ -x "/etc/init.d/dahdi" ]; then
+	invoke-rc.d dahdi stop || exit $?
+fi
+EOF
+
+chmod 755 DEBIAN/postinst && chmod 755 DEBIAN/postrm && chmod 755 DEBIAN/prerm 
+cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION-$DEB_VERSION
+
+

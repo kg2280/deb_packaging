@@ -1,0 +1,85 @@
+export DEB_PACK=modulis-opensips-conf
+export VERSION=43
+export DEB_VERSION=1
+export DEB_PATH=/home/modulis/package/opensips/${DEB_PACK}_$VERSION-$DEB_VERSION
+
+
+
+mkdir -p $DEB_PATH && cd $DEB_PATH
+rm -rf $DEB_PATH/etc/opensips
+git clone git@github.com:modulis/opensips-zonkey.git -b master $DEB_PATH/etc/opensips
+cd $DEB_PATH/etc/opensips
+git fetch origin
+git checkout v$VERSION
+
+mkdir -p $DEB_PATH/etc/zonkey/opensips/
+cp -R $DEB_PATH/etc/opensips/customconf/* $DEB_PATH/etc/zonkey/opensips/
+rm -f $DEB_PATH/etc/opensips/opensipsctlrc
+mv $DEB_PATH/etc/opensips/opensipsctlrc.zonkey $DEB_PATH/etc/opensips/opensipsctlrc
+sed -i 's/#setscriptflag(11)/setscriptflag(11)/g' $DEB_PATH/etc/zonkey/opensips/custom_setup.cfg
+sed -i 's/setscriptflag(12)/#setscriptflag(12)/g' $DEB_PATH/etc/zonkey/opensips/custom_setup.cfg
+sed -i 's/# setscriptflag(13)/setscriptflag(13)/g' $DEB_PATH/etc/zonkey/opensips/custom_setup.cfg
+sed -i 's/# debug=4/debug=3/g' $DEB_PATH/etc/zonkey/opensips/global_params.cfg
+sed -i 's/# server_signature=yes/server_signature=yes/g' $DEB_PATH/etc/zonkey/opensips/global_params.cfg
+sed -i 's/# server_header=/server_header=/g' $DEB_PATH/etc/zonkey/opensips/global_params.cfg
+sed -i 's/# user_agent_header=/user_agent_header=/g' $DEB_PATH/etc/zonkey/opensips/global_params.cfg
+sed -i 's/# db_default_url=/db_default_url=/g' $DEB_PATH/etc/zonkey/opensips/global_params.cfg
+sed -i 's/# mpath=/mpath=/g' $DEB_PATH/etc/zonkey/opensips/global_params.cfg
+sed -i 's/# modparam/modparam/g' $DEB_PATH/etc/zonkey/opensips/modules_params.cfg
+mkdir -p $DEB_PATH/var/log/opensips
+mkdir -p $DEB_PATH/var/run/opensips
+sed -i '/EOF:/ i# UNIX datagram MI socket' $DEB_PATH/etc/zonkey/opensips/modules_params.cfg
+sed -i '/EOF:/ imodparam("mi_datagram", "socket_name", "udp:10.6.8.50:8000")' $DEB_PATH/etc/zonkey/opensips/modules_params.cfg
+
+cd $DEB_PATH
+mkdir $DEB_PATH/DEBIAN
+
+cat << EOF > DEBIAN/changelog
+${DEB_PACK} ($VERSION) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Kevin Gagne <kevin.gagne@modulis.ca>  `date`
+EOF
+
+cat << EOF > DEBIAN/control
+Package: ${DEB_PACK}
+Source: ${DEB_PACK}
+Version: $VERSION-$DEB_VERSION
+Architecture: amd64
+Maintainer: Kevin Gagne <kevin.gagne@modulis.ca>
+Pre-Depends: opensips
+Replaces: opensips
+Section: comm
+Priority: optional
+Homepage: http://www.modulis.ca/
+Description: Modulis configuration for Opensips
+  This is the Zonkey configuration for Opensips
+EOF
+
+cat << EOF > DEBIAN/postinst
+#! /bin/sh
+
+depmod -a
+ldconfig
+sed -i 's!S_MEMORY=64!S_MEMORY=512!' /etc/default/opensips
+sed -i 's!P_MEMORY=4!P_MEMORY=32!' /etc/default/opensips
+chown -R opensips. /etc/opensips/ /etc/zonkey/opensips /var/log/opensips/ /var/run/opensips
+echo 'net.ipv4.ip_nonlocal_bind = 1' >> /etc/sysctl.conf 
+sysctl -p
+grep -Rl "/opt/opensips/etc" /etc/opensips/* | xargs sed -i 's|/opt/opensips/etc|/etc|g'
+grep -Rl "/opt/opensips/run" /etc/opensips/* | xargs sed -i 's|/opt/opensips/run|/var/run/opensips|g'
+grep -Rl "/opt/opensips/lib64/opensips" /etc/opensips/* | xargs sed -i 's|/opt/opensips/lib64/opensips|/usr/lib/opensips|g'
+grep -Rl "/opt/opensips/sbin/" /etc/opensips/* | xargs sed -i 's|/opt/opensips/sbin|/usr/sbin|g'
+grep -Rl "/opt/opensips//sbin/" /etc/opensips/* | xargs sed -i 's|/opt/opensips//sbin|/usr/sbin|g'
+grep -Rl "/opt/opensips/sbin/" /etc/opensips/* | xargs sed -i 's|/opt/opensips/sbin|/usr/sbin|g'
+/etc/opensips/scripts/afterbuild.sh
+opensips -c /etc/opensips/opensips.cfg
+exit 0
+EOF
+
+chmod 755 DEBIAN/postinst
+cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION-$DEB_VERSION
+
+
+

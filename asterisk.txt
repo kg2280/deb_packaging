@@ -1,0 +1,147 @@
+## Must be first run as root
+apt-get install subversion git
+/home/modulis/package/asterisk/certified-asterisk-11.6-cert11/contrib/scripts/install_prereq install
+su modulis
+
+export ASTERISK_TAR=certified-asterisk-11.6-current.tar.gz
+export DEB_PACK=modulis-cert-asterisk
+export VERSION=11.6
+export CERT_VERSION=cert12
+export DEB_VERSION=1
+export DEB_PATH=/home/modulis/package/asterisk/${DEB_PACK}_$VERSION.$CERT_VERSION-$DEB_VERSION
+
+mkdir -p $DEB_PATH && cd $DEB_PATH/..
+wget http://downloads.asterisk.org/pub/telephony/certified-asterisk/$ASTERISK_TAR
+tar xvzf $ASTERISK_TAR
+rm -f $ASTERISK_TAR
+cd asterisk-certified*
+contrib/scripts/get_mp3_source.sh
+./configure CC="gcc -O3" CFLAGS=-O3
+make menuselect.makeopts
+menuselect/menuselect --enable chan_sip --enable chan_dahdi --enable res_timing_dahdi --enable app_dahdibarge --enable cdr_mysql --enable app_meetme --enable ODBC_STORAGE --enable CORE-SOUNDS-EN-ULAW --enable CORE-SOUNDS-EN-GSM --enable CORE-SOUNDS-EN-G722 --enable CORE-SOUNDS-FR-ULAW --enable CORE-SOUNDS-FR-GSM --enable CORE-SOUNDS-FR-G722 --enable EXTRA-SOUNDS-EN-ULAW --enable EXTRA-SOUNDS-EN-GSM --enable EXTRA-SOUNDS-EN-G722 --enable EXTRA-SOUNDS-FR-ULAW --enable EXTRA-SOUNDS-FR-GSM --enable EXTRA-SOUNDS-FR-G722 --enable G711_NEW_ALGORITHM --enable G711_REDUCED_BRANCHING menuselect.makeopts
+make && make install DESTDIR=$DEB_PATH
+mkdir $DEB_PATH/etc/init.d
+mkdir $DEB_PATH/etc/default
+make config DESTDIR=$DEB_PATH
+make install-logrotate DESTDIR=$DEB_PATH
+prod=`git ls-remote git@github.com:modulis/asterisk-zonkey.git | grep heads/v | awk '{print $2}' | sort | tail -1 | grep -P 'v\d+' -o`
+rm -rf $DEB_PATH/etc/asterisk
+git clone git@github.com:modulis/asterisk-zonkey.git -b $prod $DEB_PATH/etc/asterisk
+test -d $DEB_PATH/etc/zonkey || mkdir $DEB_PATH/etc/zonkey/
+cp -R $DEB_PATH/etc/asterisk/etc_zonkey/asterisk $DEB_PATH/etc/zonkey/
+rsync -av $DEB_PATH/etc/asterisk/etc_zonkey/bin/ $DEB_PATH/etc/zonkey/bin
+
+cd $DEB_PATH
+mkdir $DEB_PATH/DEBIAN
+
+cat << EOF > DEBIAN/changelog
+${DEB_PACK} ($VERSION) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Kevin Gagne <kevin.gagne@modulis.ca>  `date`
+EOF
+
+
+cat << EOF > DEBIAN/control
+Package: ${DEB_PACK}
+Source: ${DEB_PACK}
+Version: $VERSION-$CERT_VERSION
+Architecture: amd64
+Maintainer: Debian VoIP Team <pkg-voip-maintainers@lists.alioth.debian.org>
+Depends: libiksemel3, libiksemel-utils, libical1a, libogg0, libltdl7, libvorbis0a, mailutils, libneon27, libneon27-gnutls, libbusiness-isbn-data-perl, libbusiness-isbn-perl,  libcompress-raw-zlib-perl, libcompress-raw-bzip2-perl, libdbi-perl, libdata-dumper-simple-perl, libdigest-perl, libdigest-perl-md5-perl, libencode-locale-perl, libfile-listing-perl, libhtml-parser-perl, libhtml-tagset-perl, libhttp-cookies-perl, libhttp-daemon-perl, libhttp-date-perl, libhttp-message-perl, libhttp-negotiate-perl, libio-compress-perl, libio-html-perl, libio-socket-ip-perl, libio-socket-ssl-perl, libio-socket-timeout-perl, libjson-perl, liblwp-mediatypes-perl, libnet-daemon-perl, libnet-http-perl, libnet-libidn-perl, libnet-ssleay-perl, libperlio-via-timeout-perl, libprpc-perl, libredis-perl, libtimedate-perl, libtry-tiny-perl, liburi-perl, libwww-robotrules-perl, speex, unixodbc, fxload, libflac8, libgmime-2.6-0, libgpgme11, libneon27-gnutls, libopencore-amrnb0, libopencore-amrwb0, libpj2, libpjlib-util2, libpjmedia-audiodev2, libpjmedia-codec2, libpjmedia-videodev2, libpjmedia2, libpjnath2, libpjsip-simple2, libpjsip-ua2, libpjsip2, libpjsua2, libpri1.4, libresample1, libsndfile1, libsox-fmt-alsa, libsox-fmt-base, libsox2, libsrtp0, libtonezone2.0, libwavpack1, sox, usbutils, libc6 (>= 2.16), libcap2 (>= 1:2.10), libedit2 (>= 2.11-20080614), libgcc1 (>= 1:4.1.1), libpopt0 (>= 1.14), libsqlite3-0 (>= 3.5.9), libssl1.0.0 (>= 1.0.0), libstdc++6 (>= 4.1.1), libtinfo5, libxml2 (>= 2.7.4), adduser
+Conflicts: modulis-cert-asterisk-sccp
+Section: comm
+Priority: optional
+Homepage: http://www.asterisk.org/
+Description: Open Source Private Branch Exchange (PBX)
+ Asterisk is an Open Source PBX and telephony toolkit.  It is, in a
+ sense, middleware between Internet and telephony channels on the bottom,
+ and Internet and telephony applications at the top.
+ .
+ Asterisk can be used with Voice over IP (SIP, H.323, IAX and more) standards,
+ or the Public Switched Telephone Network (PSTN) through supported hardware.
+ .
+ Supported hardware:
+ .
+  * All Wildcard (tm) ISDN PRI cards from Digium (http://www.digium.com)
+  * HFC-S/HFC-4S-based ISDN BRI cards (Junghanns.NET, beroNet, Digium etc.)
+  * All TDM (FXO/FXS) cards from Digium
+  * Various clones of Digium cards such as those by OpenVox
+  * Xorcom Astribank USB telephony adapter (http://www.xorcom.com)
+  * Voicetronix OpenPCI, OpenLine and OpenSwitch cards
+  * CAPI-compatible ISDN cards (using the add-on package chan-capi)
+  * Full Duplex Sound Card (ALSA or OSS) supported by Linux
+  * Tormenta T1/E1 card (http://www.zapatatelephony.org)
+  * QuickNet Internet PhoneJack and LineJack (http://www.quicknet.net)
+ .
+ This is the main package that includes the Asterisk daemon and most channel
+ drivers and applications.
+EOF
+
+cat << EOF > DEBIAN/postinst
+#! /bin/sh
+
+set -e
+case "\$1" in
+    configure)
+    	## add asterisk user
+	echo 'Adding system user for Asterisk' 1>&2
+	adduser --system --group --quiet --home /var/lib/asterisk --no-create-home --disabled-login --gecos "Asterisk PBX daemon" asterisk
+
+	## File permissions fix
+	chown -R asterisk. /var/run/asterisk/ /var/lib/asterisk/ /var/log/asterisk/ /var/spool/asterisk/ /usr/lib/asterisk/ /etc/zonkey/asterisk /dev/dahdi
+	chown --recursive root:asterisk /etc/asterisk
+	chmod --recursive u=rwX,g=rX,o= /var/lib/asterisk
+	chmod --recursive u=rwX,g=rX,o= /var/log/asterisk
+	chmod --recursive u=rwX,g=rX,o= /var/run/asterisk
+	chmod --recursive u=rwX,g=rX,o= /var/spool/asterisk
+	chmod --recursive u=rwX,g=rX,o= /usr/lib/asterisk
+	chmod --recursive u=rwX,g=rX,o= /dev/dahdi
+	chmod --recursive u=rwX,g=rX,o= /etc/asterisk
+esac
+
+if [ -x "/etc/init.d/asterisk" ]; then
+	update-rc.d asterisk defaults >/dev/null
+	invoke-rc.d asterisk start || exit \$?
+fi
+
+ldconfig
+exit 0
+EOF
+
+
+cat << EOF > DEBIAN/postrm
+#! /bin/sh
+
+set -e
+if [ "\$1" = purge ]; then
+        userdel -r asterisk 2> /dev/null || true
+        rm -fR /var/log/asterisk
+fi
+
+if [ "\$1" = "purge" ] ; then
+	update-rc.d asterisk remove >/dev/null
+fi
+
+# In case this system is running systemd, we make systemd reload the unit files
+# to pick up changes.
+if [ -d /run/systemd/system ] ; then
+	systemctl --system daemon-reload >/dev/null || true
+fi
+EOF
+
+cat << EOF > DEBIAN/prerm
+#! /bin/sh
+
+set -e
+rm -rf /usr/local/share/asterisk 2>/dev/null || true
+if [ -x "/etc/init.d/asterisk" ]; then
+	invoke-rc.d asterisk stop || exit \$?
+fi
+EOF
+
+chmod 755 DEBIAN/postinst && chmod 755 DEBIAN/postrm && chmod 755 DEBIAN/prerm 
+cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION.$CERT_VERSION-$DEB_VERSION
+
+

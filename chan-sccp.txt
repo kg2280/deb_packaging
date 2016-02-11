@@ -1,0 +1,43 @@
+export DEB_PACK=modulis-sccp-driver
+export VERSION=2.3
+export REVISION=r6605
+export DEB_VERSION=1
+export DEB_PATH=/home/modulis/package/sccpdrv/${DEB_PACK}_$VERSION.$REVISION-$DEB_VERSION
+
+
+mkdir -p $DEB_PATH && cd $DEB_PATH/..
+svn checkout svn://svn.code.sf.net/p/chan-sccp-b/code/trunk chan-sccp-b-code
+cd chan-sccp-b-code
+./configure --enable-conference --enable-distributed-devstate --with-hash-size=3001 --enable-video
+make && make install DESTDIR=$DEB_PATH
+cd $DEB_PATH && mkdir $DEB_PATH/DEBIAN
+rm -f $DEB_PATH/etc/asterisk/sccp.conf
+
+
+cat << EOF > DEBIAN/changelog
+${DEB_PACK} ($VERSION) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Kevin Gagne <kevin.gagne@modulis.ca>  `date`
+EOF
+
+
+cat << EOF > DEBIAN/control
+Package: ${DEB_PACK}
+Source: ${DEB_PACK}
+Version: $VERSION-$CERT_VERSION
+Architecture: amd64
+Maintainer: Kevin Gagne <kevin.gagne@gmail.com>
+Build-Depends: modulis-cert-asterisk, binutils, coreutils, libacl1, libasound2, libc6, libattr1, libc6, libc6-dev, libncurses5, libselinux1, linux-libc-dev, zlib1g
+Section: libs
+Priority: extra
+Homepage: chan-sccp-b.sourceforge.net
+Description: chan-sccp-b is a branch from the original chan-sccp
+ implementation of Skinny Client Control Protocol (SCCP) for the Asterisk
+ soft-PBX. It is mainly focused on extending the functionality provided by
+ chan_skinny. 
+EOF
+
+cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION.$REVISION-$DEB_VERSION
+
