@@ -1,12 +1,10 @@
 export DEB_PACK=modulis-zonkey
-export VERSION=66
+export VERSION=66.1
 export DEB_VERSION=1
 export DEB_PATH=/home/modulis/package/zonkey/${DEB_PACK}_$VERSION-$DEB_VERSION
-export PROD_VERSION=v${VERSION}
 
 mkdir -p $DEB_PATH/DEBIAN && cd $DEB_PATH
-#prod=`git ls-remote git@github.com:modulis/zonkey.git | grep heads/v  | sort -k2 | tail -1 | grep -P 'v\d+' -o`
-prod=$PROD_VERSION
+prod=`git ls-remote git@github.com:modulis/zonkey.git | grep heads/v  | sort | tail -1 | grep -P 'v\d+' -o`
 git clone --depth 2 git@github.com:modulis/zonkey.git -b $prod $DEB_PATH/var/www/zonkey
 
 mkdir -p $DEB_PATH/etc/zonkey/config
