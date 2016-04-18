@@ -1,7 +1,7 @@
 export DEB_PACK=modulis-sccp-driver
-export VERSION=2.3
-export REVISION=r6605
-export DEB_VERSION=1
+export VERSION=4.3
+export REVISION=r6812
+export DEB_VERSION=3
 export DEB_PATH=/home/modulis/package/sccpdrv/${DEB_PACK}_$VERSION.$REVISION-$DEB_VERSION
 
 
@@ -12,6 +12,8 @@ cd chan-sccp-b-code
 make && make install DESTDIR=$DEB_PATH
 cd $DEB_PATH && mkdir $DEB_PATH/DEBIAN
 rm -f $DEB_PATH/etc/asterisk/sccp.conf
+mkdir -p $DEB_PATH/etc/asterisk/sccp
+git clone git@github.com:modulis/sccp_refcount.git $DEB_PATH/etc/asterisk/sccp/
 
 
 cat << EOF > DEBIAN/changelog
@@ -39,5 +41,14 @@ Description: chan-sccp-b is a branch from the original chan-sccp
  chan_skinny. 
 EOF
 
+cat << EOF > DEBIAN/postinst
+#!/bin/bash
+
+cd /etc/asterisk/sccp
+python ./setup.py install
+
+EOF
+
+chmod 755 DEBIAN/postinst
 cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION.$REVISION-$DEB_VERSION
 

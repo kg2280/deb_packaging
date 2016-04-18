@@ -3,10 +3,12 @@ apt-get install subversion git
 /home/modulis/package/asterisk/certified-asterisk-11.6-cert11/contrib/scripts/install_prereq install
 su modulis
 
-export ASTERISK_TAR=certified-asterisk-11.6-current.tar.gz
+export ASTERISK_TAR=asterisk-certified-11.6-current.tar.gz
 export DEB_PACK=modulis-cert-asterisk
 export VERSION=11.6
-export CERT_VERSION=cert12
+export MOD_VERSION=24
+export MODULIS_VERSION=v${MOD_VERSION}
+export CERT_VERSION=cert13
 export DEB_VERSION=1
 export DEB_PATH=/home/modulis/package/asterisk/${DEB_PACK}_$VERSION.$CERT_VERSION-$DEB_VERSION
 
@@ -24,9 +26,8 @@ mkdir $DEB_PATH/etc/init.d
 mkdir $DEB_PATH/etc/default
 make config DESTDIR=$DEB_PATH
 make install-logrotate DESTDIR=$DEB_PATH
-prod=`git ls-remote git@github.com:modulis/asterisk-zonkey.git | grep heads/v | awk '{print $2}' | sort | tail -1 | grep -P 'v\d+' -o`
 rm -rf $DEB_PATH/etc/asterisk
-git clone git@github.com:modulis/asterisk-zonkey.git -b $prod $DEB_PATH/etc/asterisk
+git clone git@github.com:modulis/asterisk-zonkey.git -b $MODULIS_VERSION $DEB_PATH/etc/asterisk
 test -d $DEB_PATH/etc/zonkey || mkdir $DEB_PATH/etc/zonkey/
 cp -R $DEB_PATH/etc/asterisk/etc_zonkey/asterisk $DEB_PATH/etc/zonkey/
 rsync -av $DEB_PATH/etc/asterisk/etc_zonkey/bin/ $DEB_PATH/etc/zonkey/bin
@@ -80,7 +81,7 @@ Description: Open Source Private Branch Exchange (PBX)
 EOF
 
 cat << EOF > DEBIAN/postinst
-#! /bin/sh
+#!/bin/bash
 
 set -e
 case "\$1" in
@@ -112,7 +113,7 @@ EOF
 
 
 cat << EOF > DEBIAN/postrm
-#! /bin/sh
+#!/bin/bash
 
 set -e
 if [ "\$1" = purge ]; then
@@ -132,7 +133,7 @@ fi
 EOF
 
 cat << EOF > DEBIAN/prerm
-#! /bin/sh
+#!/bin/bash
 
 set -e
 rm -rf /usr/local/share/asterisk 2>/dev/null || true

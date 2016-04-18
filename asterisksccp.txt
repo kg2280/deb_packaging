@@ -3,11 +3,13 @@ apt-get install subversion git
 /home/modulis/package/asterisk/certified-asterisk-11.6-cert11/contrib/scripts/install_prereq install
 su modulis
 
-export ASTERISK_TAR=certified-asterisk-11.6-current.tar.gz
+export ASTERISK_TAR=asterisk-certified-11.6-current.tar.gz
 export DEB_PACK=modulis-cert-asterisk-sccp
 export VERSION=11.6
-export CERT_VERSION=cert12
-export DEB_VERSION=1
+export CERT_VERSION=cert13
+export DEB_VERSION=3
+export MOD_VERSION=6
+export MODULIS_VERSION=v${MOD_VERSION}
 export DEB_PATH=/home/modulis/package/asterisksccp/${DEB_PACK}_$VERSION.$CERT_VERSION-$DEB_VERSION
 
 mkdir -p $DEB_PATH && cd $DEB_PATH/..
@@ -18,14 +20,14 @@ cd asterisk-certified*
 contrib/scripts/get_mp3_source.sh
 ./configure CC="gcc -O3" CFLAGS=-O3
 make menuselect.makeopts
-menuselect/menuselect --enable cdr_mysql --enable app_meetme --enable ODBC_STORAGE --enable CORE-SOUNDS-EN-ULAW --enable CORE-SOUNDS-EN-GSM --enable CORE-SOUNDS-EN-G722 --enable CORE-SOUNDS-FR-ULAW --enable CORE-SOUNDS-FR-GSM --enable CORE-SOUNDS-FR-G722 --enable EXTRA-SOUNDS-EN-ULAW --enable EXTRA-SOUNDS-EN-GSM --enable EXTRA-SOUNDS-EN-G722 --enable EXTRA-SOUNDS-FR-ULAW --enable EXTRA-SOUNDS-FR-GSM --enable EXTRA-SOUNDS-FR-G722 --enable G711_NEW_ALGORITHM --enable G711_REDUCED_BRANCHING menuselect.makeopts
+menuselect/menuselect --enable chan_sip --enable chan_dahdi --enable res_timing_dahdi --enable app_dahdibarge --enable cdr_mysql --enable app_meetme --enable ODBC_STORAGE --enable CORE-SOUNDS-EN-ULAW --enable CORE-SOUNDS-EN-GSM --enable CORE-SOUNDS-EN-G722 --enable CORE-SOUNDS-FR-ULAW --enable CORE-SOUNDS-FR-GSM --enable CORE-SOUNDS-FR-G722 --enable EXTRA-SOUNDS-EN-ULAW --enable EXTRA-SOUNDS-EN-GSM --enable EXTRA-SOUNDS-EN-G722 --enable EXTRA-SOUNDS-FR-ULAW --enable EXTRA-SOUNDS-FR-GSM --enable EXTRA-SOUNDS-FR-G722 --enable G711_NEW_ALGORITHM --enable G711_REDUCED_BRANCHING menuselect.makeopts
 make && make install DESTDIR=$DEB_PATH
 mkdir $DEB_PATH/etc/init.d
 mkdir $DEB_PATH/etc/default
 make config DESTDIR=$DEB_PATH
 make install-logrotate DESTDIR=$DEB_PATH
 rm -rf $DEB_PATH/etc/asterisk
-git clone git@github.com:modulis/asterisk-su-zonkey.git $DEB_PATH/etc/asterisk
+git clone git@github.com:modulis/asterisk-su-zonkey.git -b $MODULIS_VERSION $DEB_PATH/etc/asterisk
 test -d $DEB_PATH/etc/zonkey || mkdir $DEB_PATH/etc/zonkey/
 cp -R $DEB_PATH/etc/asterisk/CUSTOMCONF/asterisk_config $DEB_PATH/etc/zonkey/asterisk
 rsync -av $DEB_PATH/etc/asterisk/CUSTOMCONF/bin/ $DEB_PATH/etc/zonkey/bin
