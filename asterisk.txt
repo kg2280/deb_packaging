@@ -9,7 +9,7 @@ export VERSION=11.6
 export MOD_VERSION=24
 export MODULIS_VERSION=v${MOD_VERSION}
 export CERT_VERSION=cert13
-export DEB_VERSION=1
+export DEB_VERSION=2
 export DEB_PATH=/home/modulis/package/asterisk/${DEB_PACK}_$VERSION.$CERT_VERSION-$DEB_VERSION
 
 mkdir -p $DEB_PATH && cd $DEB_PATH/..

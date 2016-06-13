@@ -1,6 +1,6 @@
 export DEB_PACK=modulis-dahdi
-export VERSION=2.11
-export DEB_VERSION=1
+export VERSION=2.11.1
+export DEB_VERSION=2
 export DEB_PATH=/home/modulis/package/dahdi/${DEB_PACK}_$VERSION-$DEB_VERSION
 export DEB_FILE=dahdi-linux-complete-current.tar.gz
 
@@ -8,7 +8,7 @@ mkdir -p $DEB_PATH && cd $DEB_PATH/..
 wget http://downloads.asterisk.org/pub/telephony/dahdi-linux-complete/$DEB_FILE
 tar xvzf $DEB_FILE
 rm -f $DEB_FILE
-cd dahdi-linux-complete*
+cd dahdi-linux-complete-$VERSION*
 make && make install DESTDIR=$DEB_PATH
 make config DESTDIR=$DEB_PATH
 mkdir -p $DEB_PATH/etc/init.d/

@@ -1,6 +1,6 @@
 export DEB_PACK=modulis-opensips-conf
 export VERSION=43
-export DEB_VERSION=2
+export DEB_VERSION=4
 export DEB_PATH=/home/modulis/package/opensips/${DEB_PACK}_$VERSION-$DEB_VERSION
 
 
@@ -63,6 +63,8 @@ ldconfig
 sed -i 's!S_MEMORY=64!S_MEMORY=512!' /etc/default/opensips
 sed -i 's!P_MEMORY=4!P_MEMORY=32!' /etc/default/opensips
 sed -i 's/RUN_OPENSIPS=no/RUN_OPENSIPS=yes/g' /etc/default/opensips
+sed -i 's|$CHROOT_DIR/tmp|/var/run/opensips|g' /usr/lib/opensips/opensipsctl/opensipsctl.fifo
+
 chown -R opensips. /etc/opensips/ /etc/zonkey/opensips /var/log/opensips/ /var/run/opensips
 echo 'net.ipv4.ip_nonlocal_bind = 1' >> /etc/sysctl.conf 
 sysctl -p

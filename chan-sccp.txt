@@ -1,14 +1,23 @@
 export DEB_PACK=modulis-sccp-driver
 export VERSION=4.3
-export REVISION=r6812
-export DEB_VERSION=3
-export DEB_PATH=/home/modulis/package/sccpdrv/${DEB_PACK}_$VERSION.$REVISION-$DEB_VERSION
+export DEB_VERSION=5
+export SOURCE_PATH=/home/modulis/package/sccpdrv/chan-sccp
+export DEB_PATH=/home/modulis/package/sccpdrv/${DEB_PACK}_${VERSION}-${DEB_VERSION}
 
+mkdir $DEB_PATH
+cd /home/modulis/package/sccpdrv/
+if [ -d "/home/modulis/package/sccpdrv/chan-sccp" ]
+then
+  rm -rf /home/modulis/package/sccpdrv/chan-sccp
+  rm -rf $DEB_PATH
+fi
+git clone https://github.com/chan-sccp/chan-sccp.git
+cd $SOURCE_PATH
+git checkout master
+git cherry-pick 587648a515d2c968ef414637ef3244018137249e  						# Generate 'beep' on incoming call when DND silent is active
+grep -rl "sccp_do_backtrace();" * | xargs sed -i 's|sccp_do_backtrace();|//sccp_do_backtrace();|g'  	# Remove call to sccp_do_backtrace()
 
-mkdir -p $DEB_PATH && cd $DEB_PATH/..
-svn checkout svn://svn.code.sf.net/p/chan-sccp-b/code/trunk chan-sccp-b-code
-cd chan-sccp-b-code
-./configure --enable-conference --enable-distributed-devstate --with-hash-size=3001 --enable-video
+./configure --enable-conference --enable-distributed-devicestate --with-hash-size=3001 --enable-video
 make && make install DESTDIR=$DEB_PATH
 cd $DEB_PATH && mkdir $DEB_PATH/DEBIAN
 rm -f $DEB_PATH/etc/asterisk/sccp.conf
@@ -50,5 +59,5 @@ python ./setup.py install
 EOF
 
 chmod 755 DEBIAN/postinst
-cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION.$REVISION-$DEB_VERSION
+cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION-$DEB_VERSION
 

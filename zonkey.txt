@@ -1,6 +1,6 @@
 export DEB_PACK=modulis-zonkey
 export VERSION=71
-export DEB_VERSION=1
+export DEB_VERSION=4
 export DEB_PATH=/home/modulis/package/zonkey/${DEB_PACK}_$VERSION-$DEB_VERSION
 export PROD_VERSION=v${VERSION}
 
@@ -40,8 +40,8 @@ cat << EOF > DEBIAN/postinst
 
 echo "export RAILS_ENV=production" >> /root/.bashrc
 . /root/.bashrc
-chown -R www-data. /etc/zonkey
-chown -R www-data. /var/www/zonkey
+/bin/chown -R www-data. /etc/zonkey
+/bin/chown -R www-data. /var/www/zonkey
 
 EOF
 
