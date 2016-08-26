@@ -9,18 +9,20 @@ export VERSION=11.6
 export MOD_VERSION=24
 export MODULIS_VERSION=v${MOD_VERSION}
 export CERT_VERSION=cert13
-export DEB_VERSION=2
-export DEB_PATH=/home/modulis/package/asterisk/${DEB_PACK}_$VERSION.$CERT_VERSION-$DEB_VERSION
+export BUILD_VERSION=1
+export DEB_VERSION=1
+export DEB_PATH=/home/modulis/package/asterisk/${DEB_PACK}_$VERSION.$CERT_VERSION.$BUILD_VERSION-$DEB_VERSION
 
 mkdir -p $DEB_PATH && cd $DEB_PATH/..
 wget http://downloads.asterisk.org/pub/telephony/certified-asterisk/$ASTERISK_TAR
+rm -rf asterisk-certified-11.6-cert*
 tar xvzf $ASTERISK_TAR
 rm -f $ASTERISK_TAR
 cd asterisk-certified*
 contrib/scripts/get_mp3_source.sh
 ./configure CC="gcc -O3" CFLAGS=-O3
 make menuselect.makeopts
-menuselect/menuselect --enable chan_sip --enable chan_dahdi --enable res_timing_dahdi --enable app_dahdibarge --enable cdr_mysql --enable app_meetme --enable ODBC_STORAGE --enable CORE-SOUNDS-EN-ULAW --enable CORE-SOUNDS-EN-GSM --enable CORE-SOUNDS-EN-G722 --enable CORE-SOUNDS-FR-ULAW --enable CORE-SOUNDS-FR-GSM --enable CORE-SOUNDS-FR-G722 --enable EXTRA-SOUNDS-EN-ULAW --enable EXTRA-SOUNDS-EN-GSM --enable EXTRA-SOUNDS-EN-G722 --enable EXTRA-SOUNDS-FR-ULAW --enable EXTRA-SOUNDS-FR-GSM --enable EXTRA-SOUNDS-FR-G722 --enable G711_NEW_ALGORITHM --enable G711_REDUCED_BRANCHING menuselect.makeopts
+menuselect/menuselect --enable chan_sip --enable chan_dahdi --enable res_timing_dahdi --enable app_dahdibarge --enable cdr_mysql --enable app_meetme --enable ODBC_STORAGE --enable CORE-SOUNDS-EN-ULAW --enable CORE-SOUNDS-EN-GSM --enable CORE-SOUNDS-EN-G722 --enable CORE-SOUNDS-FR-ULAW --enable CORE-SOUNDS-FR-GSM --enable CORE-SOUNDS-FR-G722 --enable EXTRA-SOUNDS-EN-ULAW --enable EXTRA-SOUNDS-EN-GSM --enable EXTRA-SOUNDS-EN-G722 --enable EXTRA-SOUNDS-FR-ULAW --enable EXTRA-SOUNDS-FR-GSM --enable EXTRA-SOUNDS-FR-G722 --enable G711_NEW_ALGORITHM --enable G711_REDUCED_BRANCHING --enable res_srtp menuselect.makeopts
 make && make install DESTDIR=$DEB_PATH
 mkdir $DEB_PATH/etc/init.d
 mkdir $DEB_PATH/etc/default

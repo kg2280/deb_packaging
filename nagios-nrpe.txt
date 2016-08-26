@@ -1,0 +1,28 @@
+## This file is for making a nagios-nrpe package because command-args is disable in tthe package in the official repo
+
+su modulis
+
+export DEB_PACK=modulis-nrpe-with-command-args
+export VERSION=2.15
+export DEB_VERSION=1
+export DEB_PATH=/home/modulis/package/nagios-nrpe-server-with-commandargs/
+
+
+cd $DEB_PATH
+rm -rf nagios-nrpe-$VERSION
+apt-get source nagios-nrpe-server
+cd nagios-nrpe-$VERSION/
+sed -i '/.\/configure/a                 --enable-command-args' debian/rules
+
+cd $DEB_PATH
+dch -i
+./configure
+make all
+dpkg-buildpackage
+
+
+
+
+cd .. && dpkg-deb --build ${DEB_PACK}_$VERSION-$DEB_VERSION
+
+
